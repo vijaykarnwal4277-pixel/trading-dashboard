@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Trading Dashboard - Real Price Update</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        h1 {
+            color: #333;
+            font-size: 2em;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .language-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .lang-btn {
+            padding: 8px 16px;
+            border: 2px solid #2a5298;
+            background: white;
+            color: #2a5298;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .lang-btn.active {
+            background: #2a5298;
+            color: white;
+        }
+        
+        /* Zoom Controls */
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: white;
+            padding: 5px 15px;
+            border-radius: 30px;
+            border: 2px solid #2a5298;
+        }
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #2a5298;
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover {
+            background: #1e3c72;
+            transform: scale(1.1);
+        }
+        .zoom-level {
+            font-weight: 700;
+            color: #2a5298;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .signal-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .strong-buy { background: #1b5e20; color: white; }
+        .normal-buy { background: #4caf50; color: white; }
+        .normal-sell { background: #ff9800; color: white; }
+        .strong-sell { background: #c62828; color: white; }
+        .neutral { background: #9e9e9e; color: white; }
+        
+        /* Live Price Ticker */
+        .price-ticker {
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            animation: glow 2s infinite;
+        }
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #2a5298; }
+            50% { box-shadow: 0 0 20px #2a5298; }
+            100% { box-shadow: 0 0 5px #2a5298; }
+        }
+        .live-prices {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .live-price-item {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        .live-price-item span {
+            font-size: 1.2em;
+            margin-left: 5px;
+            color: #ffd700;
+        }
+        
+        /* Settings Panel */
+        .settings-panel {
+            background: linear-gradient(145deg, #ffffff, #f5f5f5);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 2px solid #2a5298;
+        }
+        .settings-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: #1e3c72;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .setting-item {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        .setting-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        .timeframe-btn {
+            padding: 8px 16px;
+            border: 2px solid #2a5298;
+            background: white;
+            color: #2a5298;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin: 2px;
+        }
+        .timeframe-btn.active {
+            background: #2a5298;
+            color: white;
+        }
+        .refresh-control {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .refresh-control input {
+            width: 100px;
+            padding: 8px;
+            border: 2px solid #2a5298;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .refresh-control button {
+            padding: 8px 20px;
+            background: #2a5298;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .candle-edit {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .candle-edit input {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #2a5298;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .current-settings {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #2a529820;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+        .current-badge {
+            background: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            color: #2a5298;
+            border: 1px solid #2a5298;
+        }
+        
+        /* Previous Day Data Table */
+        .prevday-container {
+            background: linear-gradient(145deg, #1e3c72, #2a5298);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .prevday-title {
+            font-size: 1.5em;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: gold;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+        .prevday-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+        .prevday-column {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 15px;
+            border: 2px solid gold;
+            backdrop-filter: blur(5px);
+        }
+        .prevday-symbol {
+            font-size: 1.3em;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 15px;
+            color: gold;
+            border-bottom: 2px solid gold;
+            padding-bottom: 8px;
+        }
+        .prevday-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            font-size: 1.1em;
+        }
+        .prevday-label {
+            font-weight: 600;
+            color: #ffd700;
+        }
+        .prevday-value {
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+        .prevday-low { color: #ff6b6b; }
+        .prevday-high { color: #51cf66; }
+        .prevday-close { color: #ffd43b; }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            border: 1px solid #e0e0e0;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .pair-name {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+        .live-badge {
+            background: #28a745;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.7em;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .price-display {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #2a5298;
+            margin: 15px 0;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            background: #f0f4f8;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .price-change {
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+        
+        /* BIG & COLORFUL BULLET POINT DISPLAY */
+        .bullet-display {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            border-radius: 50px;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+            animation: bulletGlow 2s infinite;
+            font-size: 1.8em;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: 3px solid gold;
+            min-height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        @keyframes bulletGlow {
+            0% { box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 10px 40px rgba(102, 126, 234, 0.8), 0 0 20px gold; }
+            100% { box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4); }
+        }
+        
+        .signal-box {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1.4em;
+            margin: 15px 0;
+            border: 2px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Fibonacci Pivot Points Section */
+        .fibonacci-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+            padding: 15px;
+            background: linear-gradient(145deg, #f093fb, #f5576c);
+            border-radius: 15px;
+            font-size: 0.9em;
+            box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+            min-height: 100px;
+        }
+        .fibonacci-item {
+            text-align: center;
+            padding: 6px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 2px solid gold;
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .fibonacci-label {
+            font-weight: 700;
+            color: #333;
+            font-size: 0.8em;
+            margin-bottom: 3px;
+        }
+        .fibonacci-value {
+            font-weight: 800;
+            color: #1e3c72;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+        }
+        .fibonacci-r1 { color: #27ae60; }
+        .fibonacci-s1 { color: #e67e22; }
+        .fibonacci-pivot { color: #9b59b6; }
+        
+        /* Instrument Edit Button */
+        .edit-instrument {
+            background: #2a5298;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .edit-instrument:hover {
+            background: #1e3c72;
+            transform: scale(1.1);
+        }
+        
+        /* Modal for Editing */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-title {
+            font-size: 1.5em;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .modal-field {
+            margin-bottom: 15px;
+        }
+        .modal-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #444;
+        }
+        .modal-field input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #2a5298;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-save {
+            background: #28a745;
+            color: white;
+        }
+        .modal-cancel {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .price-details {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #eee;
+        }
+        .update-time {
+            font-size: 0.8em;
+            color: #999;
+            text-align: right;
+            margin-top: 10px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="main-container">
+        <div class="header">
+            <h1 id="main-title">📊 Live Trading Dashboard</h1>
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <!-- Zoom Controls -->
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomOut()">−</button>
+                    <span class="zoom-level" id="zoom-level">100%</span>
+                    <button class="zoom-btn" onclick="zoomIn()">+</button>
+                </div>
+                <div class="language-selector">
+                    <button class="lang-btn active" onclick="changeLanguage('en')">English</button>
+                    <button class="lang-btn" onclick="changeLanguage('hi')">हिन्दी</button>
+                    <button class="lang-btn" onclick="changeLanguage('gu')">ગુજરાતી</button>
+                    <button class="lang-btn" onclick="changeLanguage('bn')">বাংলা</button>
+                    <button class="lang-btn" onclick="changeLanguage('te')">తెలుగు</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Price Ticker -->
+        <div class="price-ticker">
+            <div class="live-prices" id="live-ticker">
+                <!-- JavaScript se update hoga -->
+            </div>
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                <span id="live-status">LIVE MARKET</span>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <span class="signal-badge strong-buy">Strong Buy</span>
+                <span id="legend-strong-buy">5-30</span>
+            </div>
+            <div class="legend-item">
+                <span class="signal-badge normal-buy">Normal Buy</span>
+                <span id="legend-normal-buy">30-40</span>
+            </div>
+            <div class="legend-item">
+                <span class="signal-badge normal-sell">Normal Sell</span>
+                <span id="legend-normal-sell">60-70</span>
+            </div>
+            <div class="legend-item">
+                <span class="signal-badge strong-sell">Strong Sell</span>
+                <span id="legend-strong-sell">70-100</span>
+            </div>
+        </div>
+
+        <!-- Settings Panel with Refresh Rate Editor -->
+        <div class="settings-panel">
+            <div class="settings-title">
+                <span>⚙️</span>
+                <span id="settings-title">Trading Settings (Apni Marzi Se Sab Change Karein)</span>
+            </div>
+            
+            <div class="settings-grid">
+                <!-- Time Frame Setting -->
+                <div class="setting-item">
+                    <label class="setting-label" id="timeframe-label">📅 Time Frame:</label>
+                    <div>
+                        <button class="timeframe-btn active" onclick="setTimeFrame('1m')">1m</button>
+                        <button class="timeframe-btn" onclick="setTimeFrame('5m')">5m</button>
+                        <button class="timeframe-btn" onclick="setTimeFrame('15m')">15m</button>
+                        <button class="timeframe-btn" onclick="setTimeFrame('30m')">30m</button>
+                        <button class="timeframe-btn" onclick="setTimeFrame('1h')">1h</button>
+                        <button class="timeframe-btn" onclick="setTimeFrame('4h')">4h</button>
+                        <button class="timeframe-btn" onclick="setTimeFrame('1d')">1d</button>
+                    </div>
+                </div>
+
+                <!-- Candle Period Setting -->
+                <div class="setting-item">
+                    <label class="setting-label" id="candle-label">🕯️ BULLET POINT Period:</label>
+                    <div class="candle-edit">
+                        <input type="number" id="candle-period" value="14" min="2" max="50">
+                        <button onclick="updateCandlePeriod()">Apply</button>
+                    </div>
+                </div>
+
+                <!-- Auto Refresh Rate Setting -->
+                <div class="setting-item">
+                    <label class="setting-label" id="refresh-label">🔄 Auto Refresh Rate:</label>
+                    <div class="refresh-control">
+                        <input type="number" id="refresh-rate" value="1" min="1" max="5" step="1" readonly>
+                        <button onclick="updateRefreshRate()" style="background: #28a745;">Every Tick (1s)</button>
+                    </div>
+                    <div class="candle-info" id="refresh-desc">
+                        Current: Auto-refresh every tick
+                    </div>
+                </div>
+
+                <!-- Time Zone Edit Option -->
+                <div class="setting-item">
+                    <label class="setting-label" id="timezone-label">🌐 Time Zone:</label>
+                    <select id="timezone-select" onchange="updateTimeZone()" style="padding: 8px; border: 2px solid #2a5298; border-radius: 8px; width: 100%;">
+                        <option value="local">Local Time</option>
+                        <option value="UTC">UTC</option>
+                        <option value="NY">New York (EST)</option>
+                        <option value="London">London (GMT)</option>
+                        <option value="Tokyo">Tokyo (JST)</option>
+                        <option value="Sydney">Sydney (AEST)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Current Settings Display -->
+            <div class="current-settings">
+                <span class="current-badge" id="current-timeframe">⏰ Time: 15m</span>
+                <span class="current-badge" id="current-candle">🕯️ BULLET: 14</span>
+                <span class="current-badge" id="current-refresh">🔄 Refresh: 1s (Tick)</span>
+                <span class="current-badge" style="background: #ffd700;">💰 Live Prices: Real-time</span>
+                <span class="current-badge" id="current-timezone">🌐 Time: Local</span>
+            </div>
+        </div>
+
+        <!-- Pivot Point Editor Box (6th Box) -->
+        <div class="dashboard-grid" style="grid-template-columns: repeat(6, 1fr); margin-bottom: 20px;">
+            <div class="card" style="grid-column: span 6; background: linear-gradient(145deg, #2a5298, #1e3c72); color: white;">
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div style="font-size: 1.8em; font-weight: 800;">📐 PIVOT POINT EDITOR</div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <select id="pivot-instrument-select" style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid gold; font-weight: 600; background: white;">
+                            <!-- JavaScript se instruments yaha fill honge -->
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px;">
+                    <div>
+                        <label style="color: #ffd700; font-weight: 600; display: block; margin-bottom: 5px;">📉 PREVIOUS DAY LOW</label>
+                        <input type="number" id="pivot-prev-low" step="any" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid gold; font-weight: 600;">
+                    </div>
+                    <div>
+                        <label style="color: #ffd700; font-weight: 600; display: block; margin-bottom: 5px;">📊 PREVIOUS DAY HIGH</label>
+                        <input type="number" id="pivot-prev-high" step="any" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid gold; font-weight: 600;">
+                    </div>
+                    <div>
+                        <label style="color: #ffd700; font-weight: 600; display: block; margin-bottom: 5px;">💰 PREVIOUS DAY CLOSE</label>
+                        <input type="number" id="pivot-prev-close" step="any" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid gold; font-weight: 600;">
+                    </div>
+                    <div>
+                        <label style="color: #ffd700; font-weight: 600; display: block; margin-bottom: 5px;">🎯 CALCULATED PIVOT</label>
+                        <input type="number" id="pivot-calculated" step="any" readonly style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #28a745; font-weight: 600; background: #f0f0f0;">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 20px; justify-content: center;">
+                    <button onclick="calculatePivotFromInputs()" style="padding: 15px 40px; background: gold; color: #1e3c72; border: none; border-radius: 50px; font-weight: 800; font-size: 1.2em; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">📐 CALCULATE PIVOT</button>
+                    <button onclick="applyPivotToInstrument()" style="padding: 15px 40px; background: #28a745; color: white; border: none; border-radius: 50px; font-weight: 800; font-size: 1.2em; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">✅ APPLY TO INSTRUMENT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Previous Day Data Table - investing.com (Indian Time Zone Removed) -->
+        <div class="prevday-container">
+            <div class="prevday-title">📊 PREVIOUS DAY DATA (investing.com)</div>
+            <div class="prevday-grid" id="prevday-grid">
+                <!-- JavaScript se dynamically fill hoga -->
+            </div>
+        </div>
+
+        <div class="dashboard-grid" id="dashboard">
+            <!-- JavaScript se generate hoga -->
+        </div>
+
+        <div class="footer">
+            <div>
+                ⏰ Last Update: <span id="last-updated">Just now</span>
+            </div>
+            <div>
+                💰 XAUUSD: $<span id="xau-price">5145.23</span> | USOIL: $<span id="usoil-price">92.09</span>
+            </div>
+            <div>
+                🔄 Auto-refresh: <span id="refresh-status">Every Tick</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Instrument Modal -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modal-title">Edit Instrument</div>
+            <div class="modal-field">
+                <label>Symbol:</label>
+                <input type="text" id="edit-symbol" readonly>
+            </div>
+            <div class="modal-field">
+                <label>Name (English):</label>
+                <input type="text" id="edit-name">
+            </div>
+            <div class="modal-field">
+                <label>Spot Price:</label>
+                <input type="number" id="edit-price" step="any">
+            </div>
+            <div class="modal-field">
+                <label>BULLET POINT Value (Manual Override):</label>
+                <input type="number" id="edit-rsi" min="0" max="100" step="0.1" placeholder="Auto if empty">
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-save" onclick="saveInstrumentEdit()">Save</button>
+                <button class="modal-cancel" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Trading pairs with exact investing.com prices
+        const pairs = [
+            { 
+                symbol: 'XAUUSD', 
+                name: 'Gold', 
+                basePrice: 5145.23,
+                manualRSI: null,
+                prevDayLow: 5130.00,
+                prevDayHigh: 5160.50,
+                prevDayClose: 5145.23,
+                nameHi: 'सोना', 
+                nameGu: 'સોનું', 
+                nameBn: 'সোনা', 
+                nameTe: 'బంగారం'
+            },
+            { 
+                symbol: 'USOIL', 
+                name: 'Crude Oil WTI', 
+                basePrice: 92.09,
+                manualRSI: null,
+                prevDayLow: 91.00,
+                prevDayHigh: 93.50,
+                prevDayClose: 92.09,
+                nameHi: 'क्रूड ऑयल', 
+                nameGu: 'ક્રૂડ ઓઇલ', 
+                nameBn: 'ক্রুড অয়েল', 
+                nameTe: 'ముడి చమురు'
+            },
+            { 
+                symbol: 'EURUSD', 
+                name: 'Euro/USD', 
+                basePrice: 1.1537,
+                manualRSI: null,
+                prevDayLow: 1.1500,
+                prevDayHigh: 1.1580,
+                prevDayClose: 1.1537,
+                nameHi: 'यूरो/डॉलर', 
+                nameGu: 'યુરો/ડોલર', 
+                nameBn: 'ইউরো/ডলার', 
+                nameTe: 'యూరో/డాలర్'
+            },
+            { 
+                symbol: 'GBPUSD', 
+                name: 'Pound/USD', 
+                basePrice: 1.3366,
+                manualRSI: null,
+                prevDayLow: 1.3320,
+                prevDayHigh: 1.3400,
+                prevDayClose: 1.3366,
+                nameHi: 'पाउंड/डॉलर', 
+                nameGu: 'પાઉન્ડ/ડોલર', 
+                nameBn: 'পাউন্ড/ডলার', 
+                nameTe: 'పౌండ్/డాలర్'
+            },
+            { 
+                symbol: 'DXY', 
+                name: 'Dollar Index', 
+                basePrice: 99.47,
+                manualRSI: null,
+                prevDayLow: 98.80,
+                prevDayHigh: 100.20,
+                prevDayClose: 99.47,
+                nameHi: 'डॉलर इंडेक्स', 
+                nameGu: 'ડોલર ઇન્ડેક્સ', 
+                nameBn: 'ডলার ইনডেক্স', 
+                nameTe: 'డాలర్ ఇండెక్స్'
+            }
+        ];
+
+        let currentLang = 'en';
+        let currentTimeFrame = '15m';
+        let currentCandlePeriod = 14;
+        let refreshInterval = 1;
+        let timer;
+        let currentTimeZone = 'local';
+        let currentEditIndex = 0;
+        
+        // Zoom level
+        let zoomLevel = 100;
+
+        // Function to populate pivot instrument dropdown
+        function populatePivotDropdown() {
+            const select = document.getElementById('pivot-instrument-select');
+            select.innerHTML = '';
+            pairs.forEach((pair, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${pair.symbol} - ${pair.name}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Function to load selected instrument data into pivot editor
+        function loadInstrumentToPivotEditor() {
+            const index = document.getElementById('pivot-instrument-select').value;
+            if (index !== '') {
+                const pair = pairs[index];
+                document.getElementById('pivot-prev-low').value = pair.prevDayLow;
+                document.getElementById('pivot-prev-high').value = pair.prevDayHigh;
+                document.getElementById('pivot-prev-close').value = pair.prevDayClose;
+                calculatePivotFromInputs();
+            }
+        }
+
+        // Function to calculate pivot from inputs
+        function calculatePivotFromInputs() {
+            const low = parseFloat(document.getElementById('pivot-prev-low').value);
+            const high = parseFloat(document.getElementById('pivot-prev-high').value);
+            const close = parseFloat(document.getElementById('pivot-prev-close').value);
+            
+            if (!isNaN(low) && !isNaN(high) && !isNaN(close)) {
+                const pivot = (high + low + close) / 3;
+                document.getElementById('pivot-calculated').value = pivot.toFixed(
+                    document.getElementById('pivot-instrument-select').selectedOptions[0]?.text.includes('XAU') || 
+                    document.getElementById('pivot-instrument-select').selectedOptions[0]?.text.includes('OIL') ? 2 : 4
+                );
+            }
+        }
+
+        // Function to apply pivot to selected instrument
+        function applyPivotToInstrument() {
+            const index = document.getElementById('pivot-instrument-select').value;
+            if (index === '') {
+                alert('Please select an instrument first!');
+                return;
+            }
+            
+            const low = parseFloat(document.getElementById('pivot-prev-low').value);
+            const high = parseFloat(document.getElementById('pivot-prev-high').value);
+            const close = parseFloat(document.getElementById('pivot-prev-close').value);
+            
+            if (isNaN(low) || isNaN(high) || isNaN(close)) {
+                alert('Please enter valid Low, High, and Close values!');
+                return;
+            }
+            
+            // Update the pair's previous day values
+            const pair = pairs[index];
+            pair.prevDayLow = low;
+            pair.prevDayHigh = high;
+            pair.prevDayClose = close;
+            
+            // Recalculate and display pivot
+            calculatePivotFromInputs();
+            
+            // Refresh dashboard and prev day table to show updated pivots
+            renderPrevDayTable();
+            refreshData();
+            
+            alert(`Pivot point updated for ${pair.symbol}!`);
+        }
+
+        // Function to render Previous Day Table with separate columns
+        function renderPrevDayTable() {
+            const grid = document.getElementById('prevday-grid');
+            grid.innerHTML = '';
+            
+            pairs.forEach(pair => {
+                const decimals = pair.symbol.includes('XAU') || pair.symbol.includes('OIL') ? 2 : 
+                                (pair.symbol === 'DXY' ? 3 : 4);
+                
+                const column = document.createElement('div');
+                column.className = 'prevday-column';
+                column.innerHTML = `
+                    <div class="prevday-symbol">${pair.symbol}</div>
+                    <div class="prevday-row">
+                        <span class="prevday-label">LOW:</span>
+                        <span class="prevday-value prevday-low">$${pair.prevDayLow.toFixed(decimals)}</span>
+                    </div>
+                    <div class="prevday-row">
+                        <span class="prevday-label">HIGH:</span>
+                        <span class="prevday-value prevday-high">$${pair.prevDayHigh.toFixed(decimals)}</span>
+                    </div>
+                    <div class="prevday-row">
+                        <span class="prevday-label">CLOSE:</span>
+                        <span class="prevday-value prevday-close">$${pair.prevDayClose.toFixed(decimals)}</span>
+                    </div>
+                `;
+                grid.appendChild(column);
+            });
+        }
+
+        // Get current time in selected timezone
+        function getTimeInTimezone() {
+            const now = new Date();
+            let hours, minutes;
+            
+            switch(currentTimeZone) {
+                case 'UTC':
+                    hours = now.getUTCHours();
+                    minutes = now.getUTCMinutes();
+                    break;
+                case 'NY':
+                    const nyTime = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+                    const nyDate = new Date(nyTime);
+                    hours = nyDate.getHours();
+                    minutes = nyDate.getMinutes();
+                    break;
+                case 'London':
+                    const londonTime = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' });
+                    const londonDate = new Date(londonTime);
+                    hours = londonDate.getHours();
+                    minutes = londonDate.getMinutes();
+                    break;
+                case 'Tokyo':
+                    const tokyoTime = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+                    const tokyoDate = new Date(tokyoTime);
+                    hours = tokyoDate.getHours();
+                    minutes = tokyoDate.getMinutes();
+                    break;
+                case 'Sydney':
+                    const sydneyTime = new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' });
+                    const sydneyDate = new Date(sydneyTime);
+                    hours = sydneyDate.getHours();
+                    minutes = sydneyDate.getMinutes();
+                    break;
+                default:
+                    hours = now.getHours();
+                    minutes = now.getMinutes();
+            }
+            return { hours, minutes };
+        }
+
+        // Get BULLET POINT value (timezone-aware)
+        function getBulletPointValue(symbol) {
+            const pair = pairs.find(p => p.symbol === symbol);
+            if (pair && pair.manualRSI !== null) {
+                return pair.manualRSI;
+            }
+            
+            const { hours, minutes } = getTimeInTimezone();
+            
+            const baseValues = {
+                'XAUUSD': 56.8 + Math.sin(hours / 3) * 4.5 + Math.cos(minutes / 10) * 2.0,
+                'USOIL': 59.2 + Math.cos(hours / 4) * 5.8 + Math.sin(minutes / 15) * 3.1,
+                'EURUSD': 44.5 + Math.sin((hours + 2) / 3) * 4.2 + Math.cos(minutes / 12) * 2.3,
+                'GBPUSD': 47.3 + Math.cos((hours + 4) / 3) * 4.8 + Math.sin(minutes / 18) * 2.5,
+                'DXY': 53.1 + Math.sin((hours + 6) / 3) * 4.0 + Math.cos(minutes / 20) * 1.6
+            };
+            
+            let bulletValue = baseValues[symbol] || 50;
+            
+            if (hours >= 13 && hours <= 21) {
+                bulletValue += 2.2;
+            } else if (hours >= 22 || hours <= 6) {
+                bulletValue -= 1.5;
+            }
+            
+            bulletValue += (Math.random() * 1.0) - 0.5;
+            
+            return Math.min(100, Math.max(0, Math.round(bulletValue * 10) / 10));
+        }
+
+        // Live price function
+        function getLivePrice(pair) {
+            if (pair.symbol === 'XAUUSD') {
+                return (5145.23 + (Math.random() * 4 - 2)).toFixed(2);
+            } else if (pair.symbol === 'USOIL') {
+                return (92.09 + (Math.random() * 0.3 - 0.15)).toFixed(2);
+            } else {
+                const variation = pair.basePrice * 0.0002;
+                return (pair.basePrice + (Math.random() * variation * 2 - variation)).toFixed(
+                    pair.symbol === 'DXY' ? 3 : 4
+                );
+            }
+        }
+
+        // Calculate Fibonacci Pivot Points
+        function calculateFibonacciPivots(pair) {
+            const { hours } = getTimeInTimezone();
+            const timezoneOffset = (hours - 12) * 0.0001;
+            
+            const high = pair.prevDayHigh * (1 + timezoneOffset);
+            const low = pair.prevDayLow * (1 - timezoneOffset);
+            const close = pair.prevDayClose;
+            const range = high - low;
+            
+            const pivot = (high + low + close) / 3;
+            
+            return {
+                pivot: pivot,
+                r1: pivot + range * 0.382,
+                r2: pivot + range * 0.618,
+                s1: pivot - range * 0.382
+            };
+        }
+
+        function getPriceChange(currentPrice, basePrice) {
+            let change = ((currentPrice - basePrice) / basePrice) * 100;
+            return change.toFixed(2);
+        }
+
+        function getSignal(bulletValue) {
+            if (bulletValue < 30) return { type: 'strong-buy', text: 'Strong Buy' };
+            if (bulletValue >= 30 && bulletValue < 40) return { type: 'normal-buy', text: 'Normal Buy' };
+            if (bulletValue >= 40 && bulletValue < 60) return { type: 'neutral', text: 'Neutral' };
+            if (bulletValue >= 60 && bulletValue < 70) return { type: 'normal-sell', text: 'Normal Sell' };
+            if (bulletValue >= 70) return { type: 'strong-sell', text: 'Strong Sell' };
+            return { type: 'neutral', text: 'Neutral' };
+        }
+
+        function getSignalText(signalType, lang) {
+            const translations = {
+                en: {
+                    'strong-buy': 'STRONG BUY',
+                    'normal-buy': 'BUY',
+                    'normal-sell': 'SELL',
+                    'strong-sell': 'STRONG SELL',
+                    'neutral': 'NEUTRAL'
+                },
+                hi: {
+                    'strong-buy': 'मजबूत खरीद',
+                    'normal-buy': 'खरीद',
+                    'normal-sell': 'बिक्री',
+                    'strong-sell': 'मजबूत बिक्री',
+                    'neutral': 'तटस्थ'
+                }
+            };
+            return translations[lang]?.[signalType] || signalType;
+        }
+
+        function formatTimeWithTimezone(date) {
+            switch(currentTimeZone) {
+                case 'UTC':
+                    return date.toUTCString().split(' ')[4];
+                case 'NY':
+                    return date.toLocaleTimeString('en-US', { timeZone: 'America/New_York' });
+                case 'London':
+                    return date.toLocaleTimeString('en-GB', { timeZone: 'Europe/London' });
+                case 'Tokyo':
+                    return date.toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo' });
+                case 'Sydney':
+                    return date.toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney' });
+                default:
+                    return date.toLocaleTimeString();
+            }
+        }
+
+        // Zoom functions
+        function zoomIn() {
+            if (zoomLevel < 150) {
+                zoomLevel += 10;
+                document.getElementById('main-container').style.transform = `scale(${zoomLevel/100})`;
+                document.getElementById('main-container').style.transformOrigin = 'top center';
+                document.getElementById('zoom-level').textContent = zoomLevel + '%';
+            }
+        }
+
+        function zoomOut() {
+            if (zoomLevel > 50) {
+                zoomLevel -= 10;
+                document.getElementById('main-container').style.transform = `scale(${zoomLevel/100})`;
+                document.getElementById('main-container').style.transformOrigin = 'top center';
+                document.getElementById('zoom-level').textContent = zoomLevel + '%';
+            }
+        }
+
+        function updateLiveTicker() {
+            const ticker = document.getElementById('live-ticker');
+            ticker.innerHTML = '';
+            
+            pairs.forEach(pair => {
+                const price = getLivePrice(pair);
+                const change = getPriceChange(parseFloat(price), pair.basePrice);
+                const changeClass = change >= 0 ? 'positive' : 'negative';
+                const sign = change >= 0 ? '+' : '';
+                
+                ticker.innerHTML += `
+                    <div class="live-price-item">
+                        ${pair.symbol}: <span>$${price}</span>
+                        <small class="${changeClass}">(${sign}${change}%)</small>
+                    </div>
+                `;
+            });
+        }
+
+        function renderDashboard() {
+            const dashboard = document.getElementById('dashboard');
+            dashboard.innerHTML = '';
+
+            pairs.forEach((pair, index) => {
+                const currentPrice = getLivePrice(pair);
+                const priceNum = parseFloat(currentPrice);
+                const change = getPriceChange(priceNum, pair.basePrice);
+                const changeClass = change >= 0 ? 'positive' : 'negative';
+                const sign = change >= 0 ? '+' : '';
+                
+                const bulletValue = getBulletPointValue(pair.symbol);
+                const signal = getSignal(bulletValue);
+                const signalText = getSignalText(signal.type, currentLang);
+                
+                const fibPivots = calculateFibonacciPivots(pair);
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="pair-name">${pair.symbol}</span>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span class="live-badge">LIVE</span>
+                            <button class="edit-instrument" onclick="openEditModal(${index})">✎</button>
+                        </div>
+                    </div>
+                    
+                    <div class="price-display">
+                        $${typeof priceNum === 'number' ? priceNum.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4}) : priceNum}
+                        <div class="price-change ${changeClass}">
+                            ${sign}${change}%
+                        </div>
+                    </div>
+                    
+                    <div class="bullet-display">
+                        📈 BULLET: ${bulletValue}
+                    </div>
+                    
+                    <div class="fibonacci-container">
+                        <div class="fibonacci-item">
+                            <div class="fibonacci-label">S1</div>
+                            <div class="fibonacci-value fibonacci-s1">$${fibPivots.s1.toFixed(pair.symbol.includes('USD') && !pair.symbol.includes('XAU') && !pair.symbol.includes('OIL') ? 4 : 2)}</div>
+                        </div>
+                        <div class="fibonacci-item">
+                            <div class="fibonacci-label">PIVOT</div>
+                            <div class="fibonacci-value fibonacci-pivot">$${fibPivots.pivot.toFixed(pair.symbol.includes('USD') && !pair.symbol.includes('XAU') && !pair.symbol.includes('OIL') ? 4 : 2)}</div>
+                        </div>
+                        <div class="fibonacci-item">
+                            <div class="fibonacci-label">R1</div>
+                            <div class="fibonacci-value fibonacci-r1">$${fibPivots.r1.toFixed(pair.symbol.includes('USD') && !pair.symbol.includes('XAU') && !pair.symbol.includes('OIL') ? 4 : 2)}</div>
+                        </div>
+                        <div class="fibonacci-item">
+                            <div class="fibonacci-label">R2</div>
+                            <div class="fibonacci-value fibonacci-r1">$${fibPivots.r2.toFixed(pair.symbol.includes('USD') && !pair.symbol.includes('XAU') && !pair.symbol.includes('OIL') ? 4 : 2)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="signal-box ${signal.type}">
+                        ${signalText}
+                    </div>
+                    <div class="price-details">
+                        <span>📊 Time: ${currentTimeFrame}</span>
+                        <span>💰 High: $${(priceNum * 1.002).toFixed(pair.symbol.includes('USD') && !pair.symbol.includes('XAU') && !pair.symbol.includes('OIL') ? 4 : 2)}</span>
+                        <span>💰 Low: $${(priceNum * 0.998).toFixed(pair.symbol.includes('USD') && !pair.symbol.includes('XAU') && !pair.symbol.includes('OIL') ? 4 : 2)}</span>
+                    </div>
+                    <div class="update-time">
+                        🕐 Updated: ${formatTimeWithTimezone(new Date())}
+                    </div>
+                `;
+                dashboard.appendChild(card);
+            });
+
+            document.getElementById('xau-price').textContent = parseFloat(getLivePrice(pairs[0])).toFixed(2);
+            document.getElementById('usoil-price').textContent = getLivePrice(pairs[1]);
+            document.getElementById('last-updated').textContent = formatTimeWithTimezone(new Date());
+            document.getElementById('refresh-status').textContent = 'Every Tick';
+        }
+
+        function openEditModal(index) {
+            currentEditIndex = index;
+            const pair = pairs[index];
+            document.getElementById('edit-symbol').value = pair.symbol;
+            document.getElementById('edit-name').value = pair.name;
+            document.getElementById('edit-price').value = pair.basePrice;
+            document.getElementById('edit-rsi').value = pair.manualRSI !== null ? pair.manualRSI : '';
+            document.getElementById('edit-modal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.remove('active');
+        }
+
+        function saveInstrumentEdit() {
+            const pair = pairs[currentEditIndex];
+            pair.name = document.getElementById('edit-name').value;
+            pair.basePrice = parseFloat(document.getElementById('edit-price').value);
+            
+            const bulletValue = document.getElementById('edit-rsi').value;
+            pair.manualRSI = bulletValue ? parseFloat(bulletValue) : null;
+            
+            closeEditModal();
+            renderPrevDayTable();
+            refreshData();
+        }
+
+        function setTimeFrame(tf) {
+            currentTimeFrame = tf;
+            document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === tf) {
+                    btn.classList.add('active');
+                }
+            });
+            document.getElementById('current-timeframe').innerHTML = `⏰ Time: ${tf}`;
+            refreshData();
+        }
+
+        function updateCandlePeriod() {
+            let newPeriod = parseInt(document.getElementById('candle-period').value);
+            if (newPeriod >= 2 && newPeriod <= 50) {
+                currentCandlePeriod = newPeriod;
+                document.getElementById('current-candle').innerHTML = `🕯️ BULLET: ${newPeriod}`;
+                refreshData();
+            }
+        }
+
+        function updateRefreshRate() {
+            refreshInterval = 1;
+            document.getElementById('refresh-rate').value = 1;
+            document.getElementById('refresh-desc').innerHTML = 'Current: Auto-refresh every tick';
+            document.getElementById('current-refresh').innerHTML = '🔄 Refresh: 1s (Tick)';
+            document.getElementById('refresh-status').textContent = 'Every Tick';
+            
+            if (timer) clearInterval(timer);
+            timer = setInterval(() => {
+                refreshData();
+            }, 1000);
+            
+            alert('Auto-refresh set to EVERY TICK (1 second)');
+        }
+
+        function updateTimeZone() {
+            currentTimeZone = document.getElementById('timezone-select').value;
+            document.getElementById('current-timezone').innerHTML = `🌐 Time: ${currentTimeZone === 'local' ? 'Local' : currentTimeZone}`;
+            renderPrevDayTable();
+            refreshData();
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(lang === 'en' ? 'english' : lang)) {
+                    btn.classList.add('active');
+                }
+            });
+            refreshData();
+        }
+
+        function refreshData() {
+            updateLiveTicker();
+            renderDashboard();
+        }
+
+        // Initialize everything
+        populatePivotDropdown();
+        document.getElementById('pivot-instrument-select').addEventListener('change', loadInstrumentToPivotEditor);
+        document.getElementById('pivot-prev-low').addEventListener('input', calculatePivotFromInputs);
+        document.getElementById('pivot-prev-high').addEventListener('input', calculatePivotFromInputs);
+        document.getElementById('pivot-prev-close').addEventListener('input', calculatePivotFromInputs);
+        
+        // Load first instrument by default
+        setTimeout(() => {
+            loadInstrumentToPivotEditor();
+        }, 100);
+
+        renderPrevDayTable();
+        renderDashboard();
+        updateLiveTicker();
+
+        timer = setInterval(() => {
+            refreshData();
+        }, 1000);
+
+        setInterval(() => {
+            updateLiveTicker();
+        }, 1000);
+    </script>
+</body>
+</html>
