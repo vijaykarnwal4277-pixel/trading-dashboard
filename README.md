@@ -1,0 +1,2 @@
+# trading-dashboard
+VIJAY DASHBOARD JO BUY SELL INDICATE KARTA HA 
